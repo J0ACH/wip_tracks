@@ -250,7 +250,7 @@ Pdef(\track, Pdfsm([
 				Pbindf(drumSeq, \dur, Pn(0.5,16)),
 				Pbindf(signalSeq, \dur, Pseq([Pn(0.25,4),Rest(3)],2), \signal_id_aEnv, 0, \signal_freq, Pseq([1600,400,200], inf)),
 				Pbindf(noiseSeq, \dur, Pseq([Rest(1.5),Pn(0.25,2)],2)),
-				Pbindf(sawSeq, \sawNoise, 0.6)
+				Pbindf(sawSeq, \dur, Pn(4,2), \sawNoise, 0.6)
 			])
 		],
 	)
