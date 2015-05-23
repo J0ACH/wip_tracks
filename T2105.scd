@@ -1,8 +1,4 @@
 p = ProxySpace.push(s);
-p.gui;
-p.arProxyNames;
-p.krProxyNames;
-
 
 (
 ~drum[0] = {
@@ -74,7 +70,7 @@ p.krProxyNames;
 	var osc = Mix.fill(num, {|i|
 		LFSaw.ar(\sawFreq.kr(150,4), mul: Saw.ar(1/2,0.9,0.1)) *
 		LFPulse.ar(32*i,0.05,0.3,0.8,0.2) *
-		GrayNoise.ar(0.25,0.05)
+		GrayNoise.ar(\sawNoise.kr(0.25,4),0.05)
 	});
 	Pan2.ar(osc * aEnv,Saw.kr(1,0.5));
 };
@@ -83,7 +79,7 @@ p.krProxyNames;
 ~saw4[12] = \set -> Pbind(\type, \set, \args, [\sawLPF],
 	\dur, 4,
 	\sawLPF, Pstutter(Pseq([6,4,4,2], inf), Pseq([800,1400,1000,1800], inf))
-).trace;
+);
 ~saw4[30] = \filter -> {|in| Limiter.ar(in,0.95) };
 
 ~drum.play(vol:0.9).quant_(4).mold(4);
@@ -94,8 +90,6 @@ p.krProxyNames;
 ~saw4.play(vol:0.9).quant_(4);
 )
 
-Pdef(\test, Pbind(\type, \set, \args, [\sawTrig, \sawFreq], \sawTrig, 1, \dur, 4, \sawFreq, Pseq([1500,1700,1850,1505], inf))).play;
-
 (
 var masterSeq = Pbind(\type, \set, \args, [\masterTrig], \masterTrig, 1);
 var drumSeq = Pbind(\type, \set, \args, [\drumTrig], \drumTrig, 1);
@@ -103,7 +97,7 @@ var tailSeq = Pbind(\type, \set, \args, [\tailTrig, \tail_id_aEnv, \tailFreq], \
 var signalSeq = Pbind(\type, \set, \args, [\signalTrig, \signal_id_aEnv, \signal_freq], \signalTrig, 1);
 var tone_volSeq = Pbind(\type, \set, \args, [\tone_volTrig, \tone_volEnv], \tone_volTrig, 1);
 var noiseSeq = Pbind(\type, \set, \args, [\noiseTrig], \noiseTrig, 1);
-var sawSeq = Pbind(\type, \set, \args, [\sawTrig, \sawFreq], \sawTrig, 1);
+var sawSeq = Pbind(\type, \set, \args, [\sawTrig, \sawFreq, \sawNoise], \sawTrig, 1);
 
 Pdef(\track, Pdfsm([
 	Pseq([
@@ -118,7 +112,7 @@ Pdef(\track, Pdfsm([
 		Pseq([ \i1, Pseq([\i2,\i3],2), \i4, \i3, \i6]),
 
 		//phase2
-		Pseq([ Pseq([ Pseq([\p1, \p2, \p1, \p3],2), \p4],4 ), \p5]),
+		Pseq([ Pseq([ Pseq([ Pseq([\p1, \p2, \p1, \p3],2), \p4], 2 ), \p6], 2 ), \p5]),
 
 		//intro
 		Pseq([ Pseq([\i2,\i3],2), \i1]),
@@ -250,8 +244,17 @@ Pdef(\track, Pdfsm([
 				Pbindf(noiseSeq, \dur, Pseq([Rest(1.5),Pn(0.25,2)],2)),
 			])
 		],
+		\p6:[2,
+			Ppar([
+				Pbindf(masterSeq, \dur, Pn(4,2)),
+				Pbindf(drumSeq, \dur, Pn(0.5,16)),
+				Pbindf(signalSeq, \dur, Pseq([Pn(0.25,4),Rest(3)],2), \signal_id_aEnv, 0, \signal_freq, Pseq([1600,400,200], inf)),
+				Pbindf(noiseSeq, \dur, Pseq([Rest(1.5),Pn(0.25,2)],2)),
+				Pbindf(sawSeq, \sawNoise, 0.6)
+			])
+		],
 	)
-],0,1)).play;
+],0,1)).trace.play;
 )
 
 s.scope;
