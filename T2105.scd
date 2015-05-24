@@ -1,6 +1,10 @@
 p = ProxySpace.push(s);
+s.scope;
 
 (
+p[\out] = \filter -> {|in| Limiter.ar(in,0.95,0.05) };
+p.play;
+
 ~drum[0] = {
 	var f = [60,82,84,98];
 	var aEnv = EnvGen.kr(Env([0, 1, 0.45, 0],[[0.01,0.05],[0.29,0.27], [1.5, 0.29, 0.35, 1.57]], \welch), \drumTrig.tr);
@@ -49,11 +53,11 @@ p = ProxySpace.push(s);
 ~signal[0] = {
 	var aEnv = Select.kr(\signal_id_aEnv.kr(0),
 		[
-			EnvGen.kr(Env([0,1,0], [0.24,0.01], [\welch, \step]), \signalTrig.tr),
-			EnvGen.kr(Env([0,1,0], [0.05,0.2], [\lin,\welch]), \signalTrig.tr),
+			EnvGen.kr(Env([0,0.95,0], [0.24,0.01], [\welch, \step]), \signalTrig.tr),
+			EnvGen.kr(Env([0,0.95,0], [0.05,0.2], [\lin,\welch]), \signalTrig.tr),
 		]
 	);
-	Pan2.ar(SinOsc.ar(\signal_freq.kr(2000),mul:BrownNoise.kr(0.95),add:0.05) * aEnv,0);
+	Pan2.ar(SinOsc.ar(\signal_freq.kr(2000),mul:BrownNoise.kr(0.95)) * aEnv,0);
 };
 ~signal[10] = \filter -> {|in| CombC.ar(in, 1,0.5,4) };
 
@@ -82,12 +86,12 @@ p = ProxySpace.push(s);
 );
 ~saw4[30] = \filter -> {|in| Limiter.ar(in,0.95) };
 
-~drum.play(vol:0.9).quant_(4).mold(4);
-~drumTail.play(vol:0.6).quant_(4);
-~tone.play(vol:0.2).quant_(4);
-~signal.play(vol:0.3).quant_(4);
-~noise.play(vol:0.7).quant_(4);
-~saw4.play(vol:0.9).quant_(4);
+~drum.play(vol:0.95).quant_(4).mold(4);
+~drumTail.play(vol:0.7).quant_(4);
+~tone.play(vol:0.35).quant_(4);
+~signal.play(vol:0.4).quant_(4);
+~noise.play(vol:0.8).quant_(4);
+~saw4.play(vol:0.8).quant_(4);
 )
 
 (
@@ -150,7 +154,12 @@ Pdef(\track, Pdfsm([
 			])
 		],
 		\i5: [1,Pbindf(signalSeq, \dur, Pn(1,4), \signal_id_aEnv, 0)],
-		\i6: [2,Pbindf(signalSeq, \dur, Pseq([2,2,Pn(1,4)]), \signal_id_aEnv, 0)],
+		\i6: [2,
+			Ppar([
+				Pbindf(signalSeq, \dur, Pseq([2,2,Pn(1,4)]), \signal_id_aEnv, 0),
+				Pbindf(sawSeq, \dur, Pseq([Rest(4),Pn(4,1)]), \sawFreq, 400),
+			])
+		],
 		\fadeOut_tone:[0,
 			Ppar([
 				Pbindf(tone_volSeq, \dur, Pn(8, 1), \tone_volEnv, [Env([1,0], [8], [\lin]).asArray] ),
@@ -202,7 +211,7 @@ Pdef(\track, Pdfsm([
 				Pbindf(drumSeq, \dur, Pn(0.5,8)),
 				Pbindf(tailSeq, \dur, Pn(4,1), \tail_id_aEnv, 0),
 				Pbindf(noiseSeq, \dur, Pseq([Rest(1.5),Pn(0.25,2)],2)),
-				Pbindf(sawSeq, \dur, Pn(4,1), \sawFreq, 1500),
+				Pbindf(sawSeq, \dur, Pn(4,1), \sawFreq, 800),
 			])
 		],
 
@@ -257,7 +266,4 @@ Pdef(\track, Pdfsm([
 ],0,1)).trace.play;
 )
 
-s.scope;
-~drumTail.scope;
-~drum.getKeysValues;
-~drumTail.getKeysValues;
+~drum.free; ~drumTail.free; ~tone.free; ~signal.free; ~noise.free; ~saw4.free;
