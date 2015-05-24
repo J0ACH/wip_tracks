@@ -2,9 +2,10 @@ p = ProxySpace.push(s);
 s.scope;
 
 (
-p[\out] = \filter -> {|in| Limiter.ar(in,0.95,0.05) };
-p.play;
+var gNode = Group.new();
+var gRec = Group.new(gNode,\addAfter);
 
+~drum.group = gNode;
 ~drum[0] = {
 	var f = [60,82,84,98];
 	var aEnv = EnvGen.kr(Env([0, 1, 0.45, 0],[[0.01,0.05],[0.29,0.27], [1.5, 0.29, 0.35, 1.57]], \welch), \drumTrig.tr);
@@ -20,6 +21,7 @@ p.play;
 ~drum[10] = \filter -> {|in| AllpassC.ar(in,0.06,0.001,4.75) };
 ~drum[12] = \filter -> {|in| FreeVerb.ar(in,0.12,0.47,0.95) };
 
+~drumTail.group = gNode;
 ~drumTail[0] = {
 	var aEnv = Select.kr(\tail_id_aEnv.kr(0),
 		[
@@ -44,12 +46,14 @@ p.play;
 };
 ~drumTail[10] = \filter -> {|in| GVerb.ar(in,10,1.5,earlyreflevel:0.2,taillevel:0.9) };
 
+~tone.group = gNode;
 ~tone[0] = {
 	var volEnv = EnvGen.ar(\tone_volEnv.kr(Env.newClear(8)), \tone_volTrig.tr);
 	var panEnv = EnvGen.kr(Env([0.3,-0.3,0.7,-0.7,0.3],[0.5,1.5],\sin), \masterTrig.tr);
 	Pan2.ar(SinOsc.ar(\tone_freq.kr(70)) * volEnv, panEnv);
 };
 
+~signal.group = gNode;
 ~signal[0] = {
 	var aEnv = Select.kr(\signal_id_aEnv.kr(0),
 		[
@@ -61,6 +65,7 @@ p.play;
 };
 ~signal[10] = \filter -> {|in| CombC.ar(in, 1,0.5,4) };
 
+~noise.group = gNode;
 ~noise[0] = {
 	var aEnv = EnvGen.kr(Env.perc(0.05,0.15), \noiseTrig.tr);
 	Pan2.ar( WhiteNoise.ar(0.8) * Saw.ar(8,0.8,0.2) * aEnv);
@@ -68,6 +73,7 @@ p.play;
 ~noise[10] = \filter -> {|in| HPF.ar(in,1800) };
 ~noise[11] = \filter -> {|in| FreeVerb.ar(in,0.5,0.2,0.25,1,in) };
 
+~saw4.group = gNode;
 ~saw4[0] = {
 	var aEnv = EnvGen.kr(Env.perc(3.5,0.5), \sawTrig.tr);
 	var num = 80;
@@ -86,12 +92,16 @@ p.play;
 );
 ~saw4[30] = \filter -> {|in| Limiter.ar(in,0.95) };
 
+~limiter.group = gRec;
+~limiter[0] = \filter -> {|in| Limiter.ar(in,0.95,0.05) };
+
 ~drum.play(vol:0.95).quant_(4).mold(4);
 ~drumTail.play(vol:0.7).quant_(4);
 ~tone.play(vol:0.35).quant_(4);
-~signal.play(vol:0.4).quant_(4);
+~signal.play(vol:0.32).quant_(4);
 ~noise.play(vol:0.8).quant_(4);
 ~saw4.play(vol:0.8).quant_(4);
+~limiter.play;
 )
 
 (
